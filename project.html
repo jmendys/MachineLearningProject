@@ -95,11 +95,7 @@ img {
 <li>Using the best algorithm and training set to learn<br /></li>
 <li>Predict restudy for test set and produce output files</li>
 </ol>
-<<<<<<< HEAD
 <p>In order to make my analysis reproductible I use set.seeds:</p>
-=======
-<p>In order to make my analysis reproducible I use set.seeds:</p>
->>>>>>> origin/gh-pages
 <pre class="r"><code>set.seed(2904)</code></pre>
 <div id="libraries-used" class="section level2">
 <h2>Libraries used</h2>
@@ -123,21 +119,6 @@ library(dplyr)</code></pre>
 <li>convert classe predictor to factor variable (training set only)</li>
 </ul>
 <p>For this I’ve created the following function and code:</p>
-<<<<<<< HEAD
-<pre class="r"><code>  cleanUp&lt;-function(data, nzv) {
-    data&lt;-dplyr::select(data , -one_of(nzv), -(X:num_window))
-    if (exists(&quot;classe&quot;, data)) {
-      data$classe&lt;-as.factor(data$classe)
-    }
-    return(data)
-  }
-
-  nzv&lt;-names(trainData)[nearZeroVar(trainData,saveMetrics=FALSE)]
-  nzv&lt;-c(nzv,names(testData)[nearZeroVar(testData,saveMetrics=FALSE)])
-
-  trainData&lt;-cleanUp(trainData, nzv)
-  testData&lt;-cleanUp(testData, nzv)</code></pre>
-=======
 <pre class="r"><code>  nzv&lt;-names(trainData)[nearZeroVar(trainData,saveMetrics=FALSE)]
   nzv&lt;-c(nzv,names(testData)[nearZeroVar(testData,saveMetrics=FALSE)])
 
@@ -145,7 +126,6 @@ library(dplyr)</code></pre>
   testData&lt;-dplyr::select(testData , -one_of(nzv), -(X:num_window))
 
   trainData$classe&lt;-as.factor(trainData$classe)</code></pre>
->>>>>>> origin/gh-pages
 </div>
 <div id="finding-the-best-algorithm" class="section level1">
 <h1>Finding the best algorithm</h1>
@@ -154,14 +134,8 @@ library(dplyr)</code></pre>
 <div id="cart" class="section level2">
 <h2>CART</h2>
 <p>Lets start with the simplest algorithm</p>
-<<<<<<< HEAD
-<pre class="r"><code>  fit_rpart&lt;-train(classe~., data=trainData, method=&quot;rpart&quot;, trControl = fitControl)</code></pre>
-<pre><code>## Loading required package: rpart</code></pre>
-<pre class="r"><code>  fit_rpart</code></pre>
-=======
 <pre class="r"><code>  fit_rpart&lt;-train(classe~., data=trainData, method=&quot;rpart&quot;, trControl = fitControl)
   fit_rpart</code></pre>
->>>>>>> origin/gh-pages
 <pre><code>## CART 
 ## 
 ## 19622 samples
@@ -188,38 +162,8 @@ library(dplyr)</code></pre>
 <h2>Stochastic Gradient Boosting</h2>
 <p>The next method I try is gbm. As this method is more complex I will use only a subset of data to fine tune its parameters. Lets start with default values:</p>
 <pre class="r"><code>   fit_gmb&lt;-train(classe~., data=sample_n(trainData,3000), method=&quot;gbm&quot;, 
-<<<<<<< HEAD
-                  trControl = fitControl, verbose=FALSE)</code></pre>
-<pre><code>## Loading required package: gbm
-## Loading required package: survival
-## 
-## Attaching package: 'survival'
-## 
-## The following object is masked from 'package:caret':
-## 
-##     cluster
-## 
-## Loading required package: splines
-## Loading required package: parallel
-## Loaded gbm 2.1.1
-## Loading required package: plyr
-## -------------------------------------------------------------------------
-## You have loaded plyr after dplyr - this is likely to cause problems.
-## If you need functions from both plyr and dplyr, please load plyr first, then dplyr:
-## library(plyr); library(dplyr)
-## -------------------------------------------------------------------------
-## 
-## Attaching package: 'plyr'
-## 
-## The following objects are masked from 'package:dplyr':
-## 
-##     arrange, count, desc, failwith, id, mutate, rename, summarise,
-##     summarize</code></pre>
-<pre class="r"><code>   fit_gmb</code></pre>
-=======
                   trControl = fitControl, verbose=FALSE)
    fit_gmb</code></pre>
->>>>>>> origin/gh-pages
 <pre><code>## Stochastic Gradient Boosting 
 ## 
 ## 3000 samples
@@ -320,25 +264,6 @@ library(dplyr)</code></pre>
 ## Accuracy was used to select the optimal model using  the largest value.
 ## The final values used for the model were n.trees = 250,
 ##  interaction.depth = 5 and shrinkage = 0.3.</code></pre>
-<<<<<<< HEAD
-<p>It gives the accuracy of 0.9948525 It is doing quite good, isn’t it? Let’s have another try!</p>
-</div>
-<div id="random-forest" class="section level2">
-<h2>Random forest</h2>
-<pre class="r"><code>  tgrid &lt;- expand.grid(mtry=c(6))
-  fit_rf &lt;- train(classe~., data=trainData, method=&quot;rf&quot;, trControl = fitControl, 
-                  tuneGrid=tgrid)</code></pre>
-<pre><code>## Loading required package: randomForest
-## randomForest 4.6-10
-## Type rfNews() to see new features/changes/bug fixes.
-## 
-## Attaching package: 'randomForest'
-## 
-## The following object is masked from 'package:dplyr':
-## 
-##     combine</code></pre>
-<pre class="r"><code>  fit_rf</code></pre>
-=======
 <p>It gives the accuracy of 0.9948525 It is doing quite good, isn’t it? As execution of this method is going quite slow I will no longer experiment with its parameters. The accuracy I’ve got is sufficient anyway.</p>
 </div>
 <div id="random-forest" class="section level2">
@@ -348,7 +273,6 @@ library(dplyr)</code></pre>
   fit_rf &lt;- train(classe~., data=trainData, method=&quot;rf&quot;, trControl = fitControl, 
                   tuneGrid=tgrid)
   fit_rf</code></pre>
->>>>>>> origin/gh-pages
 <pre><code>## Random Forest 
 ## 
 ## 19622 samples
@@ -360,16 +284,6 @@ library(dplyr)</code></pre>
 ## 
 ## Summary of sample sizes: 14716, 14716, 14718, 14716 
 ## 
-<<<<<<< HEAD
-## Resampling results
-## 
-##   Accuracy   Kappa     Accuracy SD  Kappa SD   
-##   0.9953113  0.994069  0.001234759  0.001562032
-## 
-## Tuning parameter 'mtry' was held constant at a value of 6
-## </code></pre>
-<p>It gives the best and sufficient accuracy of 0.9953113! This is our winner!</p>
-=======
 ## Resampling results across tuning parameters:
 ## 
 ##   mtry  Accuracy   Kappa      Accuracy SD  Kappa SD   
@@ -380,16 +294,11 @@ library(dplyr)</code></pre>
 ## Accuracy was used to select the optimal model using  the largest value.
 ## The final value used for the model was mtry = 6.</code></pre>
 <p>It gives the best and sufficient accuracy of 0.9954131! This is our winner! (mainly because it is faster that than gmb ;-) ).</p>
->>>>>>> origin/gh-pages
 </div>
 </div>
 <div id="learning-on-entire-training-set" class="section level1">
 <h1>Learning on entire training set</h1>
-<<<<<<< HEAD
-<p>Now when I know which method is the best I will utilize the entire training set to learn</p>
-=======
 <p>Now when I have method selected I will utilize the entire training set to learn with the optimal mtry parameter:</p>
->>>>>>> origin/gh-pages
 <pre class="r"><code>  fitControl &lt;- trainControl(method = &quot;none&quot;)
   tgrid &lt;- expand.grid(mtry=c(6))
   fit_rf &lt;- train(classe~., data=trainData, method=&quot;rf&quot;, trControl = fitControl, 
