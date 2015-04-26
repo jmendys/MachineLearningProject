@@ -120,7 +120,7 @@ This is our winner! (mainly because it is faster that than gmb ;-) ).
 Now when I have method selected I will utilize the entire training set to learn with the optimal mtry parameter:
 ```{r message=FALSE}
   fitControl <- trainControl(method = "none")
-  tgrid <- expand.grid(mtry=c(8))
+  tgrid <- expand.grid(mtry=c(6))
   fit_rf <- train(classe~., data=trainData, method="rf", trControl = fitControl, 
                   tuneGrid=tgrid)
 ```
