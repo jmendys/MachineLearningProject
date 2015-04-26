@@ -53,20 +53,13 @@ As data cleaning I:
 
 For this I've created the following function and code:
 ```{r}
-  cleanUp<-function(data, nzv) {
-    data<-dplyr::select(data , -one_of(nzv), -(X:num_window))
-    if (exists("classe", data)) {
-      data$classe<-as.factor(data$classe)
-    }
-    return(data)
-  }
-
   nzv<-names(trainData)[nearZeroVar(trainData,saveMetrics=FALSE)]
   nzv<-c(nzv,names(testData)[nearZeroVar(testData,saveMetrics=FALSE)])
 
-  trainData<-cleanUp(trainData, nzv)
-  testData<-cleanUp(testData, nzv)
+  trainData<-dplyr::select(trainData , -one_of(nzv), -(X:num_window))
+  testData<-dplyr::select(testData , -one_of(nzv), -(X:num_window))
 
+  trainData$classe<-as.factor(trainData$classe)
 ```
 
 # Finding the best algorithm
