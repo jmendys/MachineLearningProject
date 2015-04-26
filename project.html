@@ -73,6 +73,13 @@ img {
 </ul></li>
 <li><a href="#data-loading">Data loading</a></li>
 <li><a href="#data-cleaning">Data cleaning</a></li>
+<li><a href="#finding-the-best-algorithm">Finding the best algorithm</a><ul>
+<li><a href="#cart">CART</a></li>
+<li><a href="#stochastic-gradient-boosting">Stochastic Gradient Boosting</a></li>
+<li><a href="#random-forest">Random forest</a></li>
+</ul></li>
+<li><a href="#learning-on-entire-training-set">Learning on entire training set</a></li>
+<li><a href="#predicting-outcome-for-test-set">Predicting outcome for test set</a></li>
 </ul>
 </div>
 
@@ -88,6 +95,8 @@ img {
 <li>Using the best algorithm and training set to learn<br /></li>
 <li>Predict restudy for test set and produce output files</li>
 </ol>
+<p>In order to make my analysis reproductible I use set.seeds:</p>
+<pre class="r"><code>set.seed(2904)</code></pre>
 <div id="libraries-used" class="section level2">
 <h2>Libraries used</h2>
 <p>The following packages are used in this analysis:</p>
@@ -118,13 +127,230 @@ library(dplyr)</code></pre>
     return(data)
   }
 
-
   nzv&lt;-names(trainData)[nearZeroVar(trainData,saveMetrics=FALSE)]
   nzv&lt;-c(nzv,names(testData)[nearZeroVar(testData,saveMetrics=FALSE)])
 
-
   trainData&lt;-cleanUp(trainData, nzv)
   testData&lt;-cleanUp(testData, nzv)</code></pre>
+</div>
+<div id="finding-the-best-algorithm" class="section level1">
+<h1>Finding the best algorithm</h1>
+<p>To find the best algorithm I will use cross validation with 75% data in training and 25% of data in validation set:</p>
+<pre class="r"><code>  fitControl &lt;- trainControl(method = &quot;cv&quot;, number = 4)</code></pre>
+<div id="cart" class="section level2">
+<h2>CART</h2>
+<p>Lets start with the simplest algorithm</p>
+<pre class="r"><code>  fit_rpart&lt;-train(classe~., data=trainData, method=&quot;rpart&quot;, trControl = fitControl)</code></pre>
+<pre><code>## Loading required package: rpart</code></pre>
+<pre class="r"><code>  fit_rpart</code></pre>
+<pre><code>## CART 
+## 
+## 19622 samples
+##    52 predictor
+##     5 classes: 'A', 'B', 'C', 'D', 'E' 
+## 
+## No pre-processing
+## Resampling: Cross-Validated (4 fold) 
+## 
+## Summary of sample sizes: 14716, 14716, 14717, 14717 
+## 
+## Resampling results across tuning parameters:
+## 
+##   cp          Accuracy   Kappa       Accuracy SD  Kappa SD  
+##   0.03567868  0.5112104  0.36687104  0.02948785   0.05061453
+##   0.05998671  0.3978727  0.17805165  0.06003715   0.10187059
+##   0.11515454  0.3244358  0.06095379  0.04629960   0.07039436
+## 
+## Accuracy was used to select the optimal model using  the largest value.
+## The final value used for the model was cp = 0.03567868.</code></pre>
+<p>Results are not promising. The best accuracy is 0.5112104.</p>
+</div>
+<div id="stochastic-gradient-boosting" class="section level2">
+<h2>Stochastic Gradient Boosting</h2>
+<p>The next method I try is gbm. As this method is more complex I will use only a subset of data to fine tune its parameters. Lets start with default values:</p>
+<pre class="r"><code>   fit_gmb&lt;-train(classe~., data=sample_n(trainData,3000), method=&quot;gbm&quot;, 
+                  trControl = fitControl, verbose=FALSE)</code></pre>
+<pre><code>## Loading required package: gbm
+## Loading required package: survival
+## 
+## Attaching package: 'survival'
+## 
+## The following object is masked from 'package:caret':
+## 
+##     cluster
+## 
+## Loading required package: splines
+## Loading required package: parallel
+## Loaded gbm 2.1.1
+## Loading required package: plyr
+## -------------------------------------------------------------------------
+## You have loaded plyr after dplyr - this is likely to cause problems.
+## If you need functions from both plyr and dplyr, please load plyr first, then dplyr:
+## library(plyr); library(dplyr)
+## -------------------------------------------------------------------------
+## 
+## Attaching package: 'plyr'
+## 
+## The following objects are masked from 'package:dplyr':
+## 
+##     arrange, count, desc, failwith, id, mutate, rename, summarise,
+##     summarize</code></pre>
+<pre class="r"><code>   fit_gmb</code></pre>
+<pre><code>## Stochastic Gradient Boosting 
+## 
+## 3000 samples
+##   52 predictor
+##    5 classes: 'A', 'B', 'C', 'D', 'E' 
+## 
+## No pre-processing
+## Resampling: Cross-Validated (4 fold) 
+## 
+## Summary of sample sizes: 2250, 2249, 2250, 2251 
+## 
+## Resampling results across tuning parameters:
+## 
+##   interaction.depth  n.trees  Accuracy   Kappa      Accuracy SD
+##   1                   50      0.7536602  0.6876664  0.010773515
+##   1                  100      0.8046616  0.7526648  0.013177080
+##   1                  150      0.8466585  0.8058364  0.011297264
+##   2                   50      0.8389950  0.7958971  0.006810391
+##   2                  100      0.8953346  0.8674132  0.006366990
+##   2                  150      0.9139986  0.8910576  0.004183269
+##   3                   50      0.8909986  0.8618493  0.005730929
+##   3                  100      0.9256622  0.9058237  0.010046282
+##   3                  150      0.9400013  0.9240051  0.011563798
+##   Kappa SD   
+##   0.013218198
+##   0.016555507
+##   0.014139323
+##   0.008433787
+##   0.008023940
+##   0.005315748
+##   0.007167138
+##   0.012714569
+##   0.014638093
+## 
+## Tuning parameter 'shrinkage' was held constant at a value of 0.1
+## Accuracy was used to select the optimal model using  the largest value.
+## The final values used for the model were n.trees = 150,
+##  interaction.depth = 3 and shrinkage = 0.1.</code></pre>
+<p>The best accuracy of 0.9400013 is for n.trees = 150, interaction.depth = 3 and shrinkage = 0.1. As those are the highest numbers used by default I want to check if I wont get better results with even higher numbers:</p>
+<pre class="r"><code>  tgrid &lt;- expand.grid(n.trees=c(150, 200, 250), 
+                      interaction.depth=c(3, 4, 5),
+                       shrinkage = c(0.1, 0.3))
+  fit_gmb &lt;- train(classe~., data=trainData, method=&quot;gbm&quot;, trControl = fitControl, 
+                  tuneGrid=tgrid, verbose=FALSE)
+  fit_gmb</code></pre>
+<pre><code>## Stochastic Gradient Boosting 
+## 
+## 19622 samples
+##    52 predictor
+##     5 classes: 'A', 'B', 'C', 'D', 'E' 
+## 
+## No pre-processing
+## Resampling: Cross-Validated (4 fold) 
+## 
+## Summary of sample sizes: 14718, 14716, 14716, 14716 
+## 
+## Resampling results across tuning parameters:
+## 
+##   shrinkage  interaction.depth  n.trees  Accuracy   Kappa    
+##   0.1        3                  150      0.9616760  0.9515114
+##   0.1        3                  200      0.9731424  0.9660245
+##   0.1        3                  250      0.9797677  0.9744049
+##   0.1        4                  150      0.9749262  0.9682794
+##   0.1        4                  200      0.9826215  0.9780160
+##   0.1        4                  250      0.9878707  0.9846571
+##   0.1        5                  150      0.9828762  0.9783364
+##   0.1        5                  200      0.9886349  0.9856236
+##   0.1        5                  250      0.9907243  0.9882671
+##   0.3        3                  150      0.9876668  0.9843991
+##   0.3        3                  200      0.9909285  0.9885250
+##   0.3        3                  250      0.9919986  0.9898789
+##   0.3        4                  150      0.9904698  0.9879451
+##   0.3        4                  200      0.9923044  0.9902657
+##   0.3        4                  250      0.9936804  0.9920065
+##   0.3        5                  150      0.9927630  0.9908463
+##   0.3        5                  200      0.9939352  0.9923289
+##   0.3        5                  250      0.9948525  0.9934891
+##   Accuracy SD   Kappa SD   
+##   0.0031961846  0.004057299
+##   0.0025687763  0.003257586
+##   0.0023374025  0.002963536
+##   0.0013805189  0.001752783
+##   0.0008869507  0.001121312
+##   0.0008239868  0.001041596
+##   0.0019713182  0.002497198
+##   0.0019953908  0.002524526
+##   0.0025293967  0.003200077
+##   0.0017659558  0.002233771
+##   0.0008415517  0.001064631
+##   0.0010191842  0.001289483
+##   0.0011350141  0.001435465
+##   0.0008398801  0.001062679
+##   0.0010537758  0.001332770
+##   0.0016197537  0.002049301
+##   0.0013675719  0.001729714
+##   0.0015747738  0.001992083
+## 
+## Accuracy was used to select the optimal model using  the largest value.
+## The final values used for the model were n.trees = 250,
+##  interaction.depth = 5 and shrinkage = 0.3.</code></pre>
+<p>It gives the accuracy of 0.9948525 It is doing quite good, isn’t it? Let’s have another try!</p>
+</div>
+<div id="random-forest" class="section level2">
+<h2>Random forest</h2>
+<pre class="r"><code>  tgrid &lt;- expand.grid(mtry=c(6))
+  fit_rf &lt;- train(classe~., data=trainData, method=&quot;rf&quot;, trControl = fitControl, 
+                  tuneGrid=tgrid)</code></pre>
+<pre><code>## Loading required package: randomForest
+## randomForest 4.6-10
+## Type rfNews() to see new features/changes/bug fixes.
+## 
+## Attaching package: 'randomForest'
+## 
+## The following object is masked from 'package:dplyr':
+## 
+##     combine</code></pre>
+<pre class="r"><code>  fit_rf</code></pre>
+<pre><code>## Random Forest 
+## 
+## 19622 samples
+##    52 predictor
+##     5 classes: 'A', 'B', 'C', 'D', 'E' 
+## 
+## No pre-processing
+## Resampling: Cross-Validated (4 fold) 
+## 
+## Summary of sample sizes: 14716, 14716, 14718, 14716 
+## 
+## Resampling results
+## 
+##   Accuracy   Kappa     Accuracy SD  Kappa SD   
+##   0.9953113  0.994069  0.001234759  0.001562032
+## 
+## Tuning parameter 'mtry' was held constant at a value of 6
+## </code></pre>
+<p>It gives the best and sufficient accuracy of 0.9953113! This is our winner!</p>
+</div>
+</div>
+<div id="learning-on-entire-training-set" class="section level1">
+<h1>Learning on entire training set</h1>
+<p>Now when I know which method is the best I will utilize the entire training set to learn</p>
+<pre class="r"><code>  fitControl &lt;- trainControl(method = &quot;none&quot;)
+  tgrid &lt;- expand.grid(mtry=c(6))
+  fit_rf &lt;- train(classe~., data=trainData, method=&quot;rf&quot;, trControl = fitControl, 
+                  tuneGrid=tgrid)</code></pre>
+</div>
+<div id="predicting-outcome-for-test-set" class="section level1">
+<h1>Predicting outcome for test set</h1>
+<p>With my final model I make prediction of the test set and produce output files for submissions:</p>
+<pre class="r"><code>  predictions&lt;-predict(fit_rf, testData)
+  for (i in 1:20) {
+    s &lt;- as.character(predictions[i])
+    write(s, file = paste(&quot;prediction_&quot;,i,&quot;.txt&quot;, sep=&quot;&quot;))
+  }</code></pre>
+<p>I’m ready for submission!</p>
 </div>
 
 

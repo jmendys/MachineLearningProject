@@ -22,7 +22,7 @@ The analysis consists of the following stages:
 4. Using the best algorithm and training set to learn  
 5. Predict restudy for test set and produce output files  
 
-In order to make my analysis reproductible I use set.seeds:
+In order to make my analysis reproducible I use set.seeds:
 ```{r}
 set.seed(2904)
 ```
@@ -73,7 +73,7 @@ To find the best algorithm I will use cross validation with 75% data in training
 ## CART 
 
 Lets start with the simplest algorithm
-```{r}
+```{r message=FALSE}
   fit_rpart<-train(classe~., data=trainData, method="rpart", trControl = fitControl)
   fit_rpart
 ```
@@ -83,7 +83,7 @@ Results are not promising. The best accuracy is `r max(fit_rpart$results$Accurac
 
 The next method I try is gbm. As this method is more complex I will use only a subset of data to fine tune its parameters. Lets start with default values:
 
-```{r}
+```{r message=FALSE}
    fit_gmb<-train(classe~., data=sample_n(trainData,3000), method="gbm", 
                   trControl = fitControl, verbose=FALSE)
    fit_gmb
@@ -91,7 +91,7 @@ The next method I try is gbm. As this method is more complex I will use only a s
 
 The best accuracy of `r max(fit_gmb$results$Accuracy)` is for n.trees = 150, interaction.depth = 3 and shrinkage = 0.1. As those are the highest numbers used by default I want to check if I wont get better results with even higher numbers:
 
-```{r}
+```{r message=FALSE}
   tgrid <- expand.grid(n.trees=c(150, 200, 250), 
                       interaction.depth=c(3, 4, 5),
                        shrinkage = c(0.1, 0.3))
@@ -104,19 +104,19 @@ It gives the accuracy of `r max(fit_gmb$results$Accuracy)` It is doing quite goo
 
 ## Random forest
 
-```{r}
+```{r message=FALSE}
   tgrid <- expand.grid(mtry=c(6))
   fit_rf <- train(classe~., data=trainData, method="rf", trControl = fitControl, 
                   tuneGrid=tgrid)
   fit_rf
 ```
 It gives the best and sufficient accuracy of `r max(fit_rf$results$Accuracy)`! 
-This is our winner!
+This is our winner! (It is also faster that than gmb).
 
 # Learning on entire training set
 
 Now when I know which method is the best I will utilize the entire training set to learn
-```{r}
+```{r message=FALSE}
   fitControl <- trainControl(method = "none")
   tgrid <- expand.grid(mtry=c(6))
   fit_rf <- train(classe~., data=trainData, method="rf", trControl = fitControl, 
@@ -126,7 +126,7 @@ Now when I know which method is the best I will utilize the entire training set 
 # Predicting outcome for test set
 
 With my final model I make prediction of the test set and produce output files for submissions:
-```{r}
+```{r message=FALSE}
   predictions<-predict(fit_rf, testData)
   for (i in 1:20) {
     s <- as.character(predictions[i])
