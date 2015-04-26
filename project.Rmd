@@ -1,0 +1,144 @@
+---
+title: "Practical Machine Learning Project"
+author: "Jakub Mendys"
+date: "Sunday, April 26, 2015"
+output:
+  html_document:
+    toc: true
+    theme: united
+---
+
+# Summary
+
+This document describes analyses for Practical Machine Learning project. The goal of the  project is to predict the manner in which people did the exercise.
+
+Code used in this document assumes that both training and test data set are available in the working directory and are named `pml-training.csv` and `pml-testing.cvs` respectively.
+
+The analysis consists of the following stages:
+
+1. Data loading  
+2. Data cleaning  
+3. Finding the best learning algorithm and they parameters with cross validation  
+4. Using the best algorithm and training set to learn  
+5. Predict restudy for test set and produce output files  
+
+In order to make my analysis reproductible I use set.seeds:
+```{r}
+set.seed(2904)
+```
+
+## Libraries used
+
+The following packages are used in this analysis:
+```{r message=FALSE}
+library(caret)
+library(dplyr)
+```
+
+# Data loading
+
+The following code loads the data:
+```{r}
+  trainData<-read.csv(file = 'pml-training.csv', header = TRUE)
+  testData<-read.csv(file = 'pml-testing.csv', header = TRUE)
+```
+
+# Data cleaning
+
+As data cleaning I:
+
+* remove all predictors which do not contain values in either training or test data sets,
+* remove first predictors from X - num_window as not subject relevant
+* convert classe predictor to factor variable (training set only)
+
+For this I've created the following function and code:
+```{r}
+  cleanUp<-function(data, nzv) {
+    data<-dplyr::select(data , -one_of(nzv), -(X:num_window))
+    if (exists("classe", data)) {
+      data$classe<-as.factor(data$classe)
+    }
+    return(data)
+  }
+
+  nzv<-names(trainData)[nearZeroVar(trainData,saveMetrics=FALSE)]
+  nzv<-c(nzv,names(testData)[nearZeroVar(testData,saveMetrics=FALSE)])
+
+  trainData<-cleanUp(trainData, nzv)
+  testData<-cleanUp(testData, nzv)
+
+```
+
+# Finding the best algorithm
+
+To find the best algorithm I will use cross validation with 75% data in training and 25% of data in validation set:
+
+```{r}
+  fitControl <- trainControl(method = "cv", number = 4)
+```
+
+## CART 
+
+Lets start with the simplest algorithm
+```{r}
+  fit_rpart<-train(classe~., data=trainData, method="rpart", trControl = fitControl)
+  fit_rpart
+```
+Results are not promising. The best accuracy is `r max(fit_rpart$results$Accuracy)`.
+
+## Stochastic Gradient Boosting
+
+The next method I try is gbm. As this method is more complex I will use only a subset of data to fine tune its parameters. Lets start with default values:
+
+```{r}
+   fit_gmb<-train(classe~., data=sample_n(trainData,3000), method="gbm", 
+                  trControl = fitControl, verbose=FALSE)
+   fit_gmb
+```
+
+The best accuracy of `r max(fit_gmb$results$Accuracy)` is for n.trees = 150, interaction.depth = 3 and shrinkage = 0.1. As those are the highest numbers used by default I want to check if I wont get better results with even higher numbers:
+
+```{r}
+  tgrid <- expand.grid(n.trees=c(150, 200, 250), 
+                      interaction.depth=c(3, 4, 5),
+                       shrinkage = c(0.1, 0.3))
+  fit_gmb <- train(classe~., data=trainData, method="gbm", trControl = fitControl, 
+                  tuneGrid=tgrid, verbose=FALSE)
+  fit_gmb
+```
+
+It gives the accuracy of `r max(fit_gmb$results$Accuracy)` It is doing quite good, isn't it? Let's have another try!
+
+## Random forest
+
+```{r}
+  tgrid <- expand.grid(mtry=c(6))
+  fit_rf <- train(classe~., data=trainData, method="rf", trControl = fitControl, 
+                  tuneGrid=tgrid)
+  fit_rf
+```
+It gives the best and sufficient accuracy of `r max(fit_rf$results$Accuracy)`! 
+This is our winner!
+
+# Learning on entire training set
+
+Now when I know which method is the best I will utilize the entire training set to learn
+```{r}
+  fitControl <- trainControl(method = "none")
+  tgrid <- expand.grid(mtry=c(6))
+  fit_rf <- train(classe~., data=trainData, method="rf", trControl = fitControl, 
+                  tuneGrid=tgrid)
+```
+
+# Predicting outcome for test set
+
+With my final model I make prediction of the test set and produce output files for submissions:
+```{r}
+  predictions<-predict(fit_rf, testData)
+  for (i in 1:20) {
+    s <- as.character(predictions[i])
+    write(s, file = paste("prediction_",i,".txt", sep=""))
+  }
+```
+
+I'm ready for submission!
