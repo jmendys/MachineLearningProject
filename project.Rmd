@@ -100,25 +100,27 @@ The best accuracy of `r max(fit_gmb$results$Accuracy)` is for n.trees = 150, int
   fit_gmb
 ```
 
-It gives the accuracy of `r max(fit_gmb$results$Accuracy)` It is doing quite good, isn't it? Let's have another try!
+It gives the accuracy of `r max(fit_gmb$results$Accuracy)` It is doing quite good, isn't it? As execution of this method is going quite slow I will no longer experiment with its parameters. The accuracy I've got is sufficient anyway. 
 
 ## Random forest
 
+I will test rf method with mtry parameter around square root of number of training variables:
+
 ```{r message=FALSE}
-  tgrid <- expand.grid(mtry=c(6))
+  tgrid <- expand.grid(mtry=c(6,7,8))
   fit_rf <- train(classe~., data=trainData, method="rf", trControl = fitControl, 
                   tuneGrid=tgrid)
   fit_rf
 ```
 It gives the best and sufficient accuracy of `r max(fit_rf$results$Accuracy)`! 
-This is our winner! (It is also faster that than gmb).
+This is our winner! (mainly because it is faster that than gmb ;-) ).
 
 # Learning on entire training set
 
-Now when I know which method is the best I will utilize the entire training set to learn
+Now when I have method selected I will utilize the entire training set to learn with the optimal mtry parameter:
 ```{r message=FALSE}
   fitControl <- trainControl(method = "none")
-  tgrid <- expand.grid(mtry=c(6))
+  tgrid <- expand.grid(mtry=c(8))
   fit_rf <- train(classe~., data=trainData, method="rf", trControl = fitControl, 
                   tuneGrid=tgrid)
 ```
